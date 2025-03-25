@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Region</title>
+    <!-- Підключення шрифту Orbitron з Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Відключення скролу на сторінці */
+        html,
+        body {
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #1e1e1e;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #4CAF50;
+            font-family: 'Orbitron', sans-serif;
+            /* Використання шрифту Orbitron */
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px #4CAF50, 0 0 20px #4CAF50;
+        }
+
+        canvas {
+            border: 2px solid #444;
+            background-color: #333;
+            display: none;
+            /* Приховати canvas на початку */
+        }
+
+        #retryButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+        }
+
+        #retryButton:hover {
+            background-color: #45a049;
+        }
+
+        .info {
+            margin-top: 20px;
+            font-size: 18px;
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            display: none;
+            /* Приховати інформацію на початку */
+        }
+
+        .build-panel {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            display: none;
+            /* Приховати панель будівництва на початку */
+        }
+
+        .build-panel button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .build-panel button:hover {
+            background-color: #777;
+        }
+
+        /* Стилі для стартового меню */
+        .start-menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .start-menu button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .start-menu button:hover {
+            background-color: #45a049;
+        }
+
+        /* Стилі для міні-меню */
+        .upgrade-menu {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #444;
+            padding: 20px;
+            border: 2px solid #777;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .upgrade-menu p {
+            margin: 0 0 10px 0;
+        }
+
+        .upgrade-menu button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #upgradeButton {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #upgradeButton:hover {
+            background-color: #45a049;
+        }
+
+        #closeUpgradeMenu {
+            background-color: "#777";
+            color: white;
+        }
+
+        #closeUpgradeMenu:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Стартове меню -->
+    <div class="start-menu" id="startMenu">
+        <h1>Region</h1>
+        <button id="startButton">Гра</button>
+        <button id="exitButton">Вихід</button>
+    </div>
+
+    <!-- Основний інтерфейс гри -->
+    <canvas id="gameCanvas" width="1600" height="900"></canvas>
+    <button id="retryButton">Спробувати знову</button>
+    <div class="info">
+        <p>Золото: <span id="gold">500</span> 💰</p>
+        <p>Здоров'я ратуші: <span id="townHallHealth">100</span> ❤️</p>
+        <p>Хвиля: <span id="wave">1</span></p>
+    </div>
+    <div class="build-panel">
+        <button id="buildWall">🧱 Стіна (20 золота)</button>
+        <button id="buildArcherTower">🏹 Лучна башня (100 золота)</button>
+        <button id="buildMine">⛏️ Шахта (100 золота)</button>
+        <button id="buildWorker">👷 Робочий (5000 золота)</button>
+        <button id="buildFireTower" style="display: none;">🔥 Вежа (300 золота)</button>
+        <button id="buildIceTower" style="display: none;">❄️ Льодяна вежа (350 золота)</button>
+        <button id="buildMagicTower" style="display: none;">🔮 Магічна вежа (400 золота)</button>
+        <button id="buildSniperTower" style="display: none;">🎯 Снайперська вежа (450 золота)</button>
+        <button id="deleteBuilding">❌ Видалити споруду</button>
+    </div>
+
+    <!-- Міні-меню для покращення вежі -->
+    <div id="upgradeMenu" class="upgrade-menu">
+        <p>Покращити вежу за <span id="upgradeCost">200</span> золота?</p>
+        <button id="upgradeButton">Покращити</button>
+        <button id="closeUpgradeMenu">Закрити</button>
+    </div>
+    <script>
+        // Функція для додавання золота
+        function addGold(amount) {
+            game.gold += amount;
+            goldDisplay.textContent = game.gold;
+            console.log(`Додано ${amount} золота. Загальна кількість: ${game.gold}`);
+        }
+
+        // Функція для відкриття всіх веж
+        function unlockAllTowers() {
+            game.unlockedTowers = ["wall", "archerTower", "mine", "fireTower", "iceTower", "magicTower", "sniperTower"];
+            console.log("Всі вежі відкриті!");
+        }
+
+        // Функція для завершення будівництва всіх споруд
+        function finishAllConstruction() {
+            game.buildings.forEach(building => {
+                building.isUnderConstruction = false;
+                building.constructionProgress = building.constructionTime;
+            });
+            console.log("Будівництво всіх споруд завершено!");
+        }
+
+        // Функція для запуску хвилі
+        function startWaveManually() {
+            startWave();
+            console.log("Хвиля запущена вручну!");
+        }
+
+        // Функція для скидання гри
+        function resetGameManually() {
+            resetGame();
+            console.log("Гра скинута!");
+        }
+
+        // Функція для додавання захисників
+        function addDefenders(count) {
+            for (let i = 0; i < count; i++) {
+                const x = Math.floor(Math.random() * canvas.width / game.cellSize) * game.cellSize;
+                const y = Math.floor(Math.random() * canvas.height / game.cellSize) * game.cellSize;
+                game.defenders.push(new Defender(x, y));
+            }
+            console.log(`Додано ${count} захисників!`);
+        }
+
+        // Функція для відображення списку доступних команд
+        function showCommands() {
+            console.log("Доступні команди:");
+            console.log("addGold(amount) - Додати золото");
+            console.log("unlockAllTowers() - Відкрити всі вежі");
+            console.log("finishAllConstruction() - Завершити будівництво всіх споруд");
+            console.log("startWaveManually() - Запустити хвилю вручну");
+            console.log("resetGameManually() - Скинути гру");
+            console.log("addDefenders(count) - Додати захисників");
+        }
+
+        // Показуємо список команд при підключенні скрипта
+        showCommands();
+    </script>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const retryButton = document.getElementById("retryButton");
+        const goldDisplay = document.getElementById("gold");
+        const townHallHealthDisplay = document.getElementById("townHallHealth");
+        const waveDisplay = document.getElementById("wave");
+        const buildWallButton = document.getElementById("buildWall");
+        const buildFireTowerButton = document.getElementById("buildFireTower");
+        const buildIceTowerButton = document.getElementById("buildIceTower");
+        const buildMagicTowerButton = document.getElementById("buildMagicTower");
+        const buildSniperTowerButton = document.getElementById("buildSniperTower");
+        const buildArcherTowerButton = document.getElementById("buildArcherTower");
+        const buildMineButton = document.getElementById("buildMine");
+        const buildWorkerButton = document.getElementById("buildWorker");
+        const deleteBuildingButton = document.getElementById("deleteBuilding");
+        const upgradeMenu = document.getElementById("upgradeMenu");
+        const upgradeButton = document.getElementById("upgradeButton");
+        const closeUpgradeMenu = document.getElementById("closeUpgradeMenu");
+        const upgradeCostDisplay = document.getElementById("upgradeCost");
+        const startMenu = document.getElementById("startMenu");
+        const startButton = document.getElementById("startButton");
+        const exitButton = document.getElementById("exitButton");
+
+        canvas.width = 1600;
+        canvas.height = 900;
+
+        // Головний об'єкт гри
+        const game = {
+            buildings: [],
+            enemies: [],
+            defenders: [],
+            gold: 500,
+            cellSize: 50,
+            townHall: null,
+            isGameOver: false,
+            wave: 1,
+            isWaveActive: false,
+            waveTimer: 0,
+            waveInterval: null,
+            waveStartTimer: null,
+            timeToNextWave: 60,
+            mineInterval: null,
+            mineBuildTime: 15000,
+            mineBuildTimer: null,
+            selectedBuilding: null,
+            selectedDefenders: [],
+            buildingsUnderConstruction: 0,
+            maxBuildingsUnderConstruction: 2, // Початковий ліміт будівель
+            barracksLevel: 1,
+            barracksUpgradeCost: 650,
+            unlockedTowers: ["wall", "archerTower", "mine"], // Початкові доступні вежі
+            nextTowerUnlockWave: 2, // Наступна вежа відкриється на 2 хвилі
+            towerUnlockInterval: 3, // Інтервал між відкриттям нових веж
+        };
+
+        // Клас будівлі
+        class Building {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.health = 100;
+                this.emoji = this.getEmoji();
+                this.cooldown = 0;
+                this.projectiles = [];
+                this.isUnderConstruction = true;
+                this.constructionProgress = 0;
+                this.constructionTime = this.getConstructionTime();
+                this.level = 1; // Рівень вежі
+            }
+
+            getEmoji() {
+                switch (this.type) {
+                    case "wall": return "🧱";
+                    case "townHall": return "🏛️";
+                    case "fireTower": return "🔥";
+                    case "iceTower": return "❄️";
+                    case "magicTower": return "🔮";
+                    case "sniperTower": return "🎯";
+                    case "archerTower": return "🏹";
+                    case "mine": return "⛏️";
+                    case "worker": return "👷";
+                    case "barracks": return "🏯";
+                    default: return "❓";
+                }
+            }
+
+            getConstructionTime() {
+                switch (this.type) {
+                    case "wall": return 25000;
+                    case "fireTower": return 15000;
+                    case "iceTower": return 20000;
+                    case "magicTower": return 25000;
+                    case "sniperTower": return 30000;
+                    case "archerTower": return 10000; // Швидше будівництво лучної башні
+                    case "mine": return 15000;
+                    case "worker": return 20000; // Час будівництва робочого
+                    case "barracks": return 20000;
+                    default: return 0;
+                }
+            }
+
+            draw() {
+                if (this.health <= 0) return; // Якщо споруда знищена, не малюємо її
+
+                ctx.font = `${game.cellSize}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(this.emoji, this.x + game.cellSize / 2, this.y + game.cellSize / 2);
+
+                // Відображення здоров'я
+                ctx.fillStyle = "red";
+                ctx.fillRect(this.x, this.y + game.cellSize - 10, game.cellSize * (this.health / 100), 5);
+
+                // Відображення прогресу будівництва
+                if (this.isUnderConstruction) {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                    ctx.fillRect(this.x, this.y, game.cellSize, game.cellSize);
+                    ctx.fillStyle = "white";
+                    const progressPercent = Math.floor((this.constructionProgress / this.constructionTime) * 100);
+                    ctx.fillText(
+                        `${progressPercent}%`,
+                        this.x + game.cellSize / 2,
+                        this.y + game.cellSize / 2
+                    );
+                }
+
+                // Відображення снарядів
+                this.projectiles.forEach(projectile => {
+                    ctx.beginPath();
+                    ctx.moveTo(projectile.x, projectile.y);
+                    ctx.lineTo(projectile.target.x, projectile.target.y);
+                    ctx.strokeStyle = "brown";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                });
+            }
+
+            update() {
+                if (this.health <= 0) {
+                    // Видаляємо споруду з масиву будівель
+                    game.buildings = game.buildings.filter(b => b !== this);
+                    return;
+                }
+
+                if (this.isUnderConstruction) {
+                    this.constructionProgress += 16;
+                    if (this.constructionProgress >= this.constructionTime) {
+                        this.isUnderConstruction = false;
+                        game.buildingsUnderConstruction--;
+                        if (this.type === "barracks") {
+                            for (let i = 0; i < 3; i++) {
+                                const offsetX = (i % 3 - 1) * game.cellSize;
+                                const offsetY = Math.floor(i / 3) * game.cellSize;
+                                game.defenders.push(new Defender(this.x + offsetX, this.y + offsetY));
+                            }
+                        }
+                        if (this.type === "worker") {
+                            game.maxBuildingsUnderConstruction = 2; // Скидання ліміту будівель до 2
+                        }
+                    }
+                    return;
+                }
+
+                if (this.type === "fireTower" || this.type === "upgradedFireTower") {
+                    this.cooldown--;
+                    if (this.cooldown <= 0) {
+                        for (let enemy of game.enemies) {
+                            if (Math.hypot(this.x - enemy.x, this.y - enemy.y) < 150) {
+                                this.projectiles.push({
+                                    x: this.x + game.cellSize / 2,
+                                    y: this.y + game.cellSize / 2,
+                                    target: enemy,
+                                    speed: 5
+                                });
+                                this.cooldown = this.type === "fireTower" ? 60 : 30;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (this.type === "archerTower") {
+                    this.cooldown--;
+                    if (this.cooldown <= 0) {
+                        for (let enemy of game.enemies) {
+                            if (Math.hypot(this.x - enemy.x, this.y - enemy.y) < 200) {
+                                this.projectiles.push({
+                                    x: this.x + game.cellSize / 2,
+                                    y: this.y + game.cellSize / 2,
+                                    target: enemy,
+                                    speed: 4
+                                });
+                                this.cooldown = 60; // Кулдаун для лучної башні
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                this.projectiles.forEach((projectile, index) => {
+                    let angle = Math.atan2(projectile.target.y - projectile.y, projectile.target.x - projectile.x);
+                    projectile.x += Math.cos(angle) * projectile.speed;
+                    projectile.y += Math.sin(angle) * projectile.speed;
+
+                    if (Math.hypot(projectile.x - projectile.target.x, projectile.y - projectile.target.y) < 10) {
+                        projectile.target.health -= this.type === "archerTower" ? 20 : 40; // Урон від стріли
+                        this.projectiles.splice(index, 1);
+                    }
+                });
+            }
+        }
+        //Клас ворогів
+        class Enemy {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.speed = this.getSpeed();
+                this.health = this.getHealth();
+                this.emoji = this.getEmoji();
+                this.target = null;
+                this.attackCooldown = 0;
+                this.projectiles = [];
+                this.attackRange = this.getAttackRange(); // Додаємо діапазон атаки
+            }
+
+            getSpeed() {
+                switch (this.type) {
+                    case "skeleton": return 1.5; // Збільшив швидкість скелетів
+                    case "demon": return 1;
+                    case "zombie": return 0.8;
+                    default: return 1;
+                }
+            }
+
+            getHealth() {
+                switch (this.type) {
+                    case "skeleton": return 50;
+                    case "demon": return 200;
+                    case "zombie": return 100;
+                    default: return 100;
+                }
+            }
+
+            getAttackRange() {
+                switch (this.type) {
+                    case "skeleton": return 200; // Діапазон атаки для скелета
+                    default: return game.cellSize; // Для інших - ближній бій
+                }
+            }
+
+            getEmoji() {
+                switch (this.type) {
+                    case "skeleton": return "💀";
+                    case "demon": return "👿";
+                    case "zombie": return "🧟";
+                    default: return "❓";
+                }
+            }
+
+            draw() {
+                ctx.font = `${game.cellSize}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(this.emoji, this.x + game.cellSize / 2, this.y + game.cellSize / 2);
+
+                // Відображення снарядів скелета
+                this.projectiles.forEach(projectile => {
+                    ctx.beginPath();
+                    ctx.arc(projectile.x, projectile.y, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = "white";
+                    ctx.fill();
+                });
+            }
+
+            update() {
+                if (this.attackCooldown > 0) {
+                    this.attackCooldown--;
+                }
+
+                if (!this.target || this.target.health <= 0) {
+                    const potentialTargets = [...game.buildings, ...game.defenders];
+                    this.target = potentialTargets.find(target => target.health > 0);
+                }
+
+                if (this.target) {
+                    const distanceToTarget = Math.hypot(this.x - this.target.x, this.y - this.target.y);
+
+                    // Для скелетів - рухатися до діапазону атаки
+                    if (this.type === "skeleton") {
+                        if (distanceToTarget > this.attackRange) {
+                            // Рухаємося до цілі, доки не досягнемо діапазону атаки
+                            let angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+                            this.x += Math.cos(angle) * this.speed;
+                            this.y += Math.sin(angle) * this.speed;
+                        } else if (this.attackCooldown <= 0) {
+                            // Атакуємо, якщо в діапазоні
+                            this.projectiles.push({
+                                x: this.x + game.cellSize / 2,
+                                y: this.y + game.cellSize / 2,
+                                target: this.target,
+                                speed: 3
+                            });
+                            this.attackCooldown = 120;
+                        }
+                    }
+                    // Для інших ворогів - звичайна поведінка
+                    else {
+                        let angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+                        this.x += Math.cos(angle) * this.speed;
+                        this.y += Math.sin(angle) * this.speed;
+
+                        if (distanceToTarget < game.cellSize) {
+                            if (this.attackCooldown <= 0) {
+                                this.target.health -= this.type === "demon" ? 15 : 10;
+                                this.attackCooldown = 180;
+                            }
+                            if (this.target.health <= 0) {
+                                if (this.target.type === "townHall") {
+                                    game.isGameOver = true;
+                                    retryButton.style.display = "block";
+                                }
+                                this.target = null;
+                            }
+                        }
+                    }
+                }
+
+                // Оновлення снарядів скелета
+                this.projectiles.forEach((projectile, index) => {
+                    let angle = Math.atan2(projectile.target.y - projectile.y, projectile.target.x - projectile.x);
+                    projectile.x += Math.cos(angle) * projectile.speed;
+                    projectile.y += Math.sin(angle) * projectile.speed;
+
+                    if (Math.hypot(projectile.x - projectile.target.x, projectile.y - projectile.target.y) < 10) {
+                        projectile.target.health -= 10;
+                        this.projectiles.splice(index, 1);
+                    }
+                });
+            }
+        }
+        // Функція для оновлення таймера
+function updateWaveTimer() {
+    const timerElement = document.getElementById('waveTimer');
+    if (game.isWaveActive) {
+        timerElement.textContent = "Хвиля триває!";
+    } else {
+        timerElement.textContent = `До наступної хвилі: ${game.timeToNextWave} сек`;
+    }
+}
+
+// Оновлюємо функцію resetGame()
+function resetGame() {
+    // ... інший код ...
+    game.timeToNextWave = 60; // 60 секунд до першої хвилі
+    updateWaveTimer();
+    
+    // Запускаємо таймер
+    clearInterval(game.waveStartTimer);
+    game.waveStartTimer = setInterval(() => {
+        game.timeToNextWave--;
+        updateWaveTimer();
+        
+        if (game.timeToNextWave <= 0) {
+            clearInterval(game.waveStartTimer);
+            startWave();
+        }
+    }, 1000);
+    
+    // Видаляємо старий setTimeout, так як тепер використовуємо setInterval
+}
+
+        // Клас захисника
+        class Defender {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.health = 90;
+                this.emoji = "⚔️";
+                this.speed = 2;
+                this.target = null;
+                this.isSelected = false;
+                this.attackCooldown = 0;
+            }
+
+            draw() {
+                ctx.font = `${game.cellSize}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(this.emoji, this.x + game.cellSize / 2, this.y + game.cellSize / 2);
+
+                if (this.isSelected) {
+                    ctx.strokeStyle = "yellow";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x, this.y, game.cellSize, game.cellSize);
+                }
+            }
+
+            update() {
+                if (this.attackCooldown > 0) {
+                    this.attackCooldown--;
+                }
+
+                let closestEnemy = null;
+                let closestDistance = Infinity;
+
+                for (let enemy of game.enemies) {
+                    let distance = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestEnemy = enemy;
+                    }
+                }
+
+                if (closestEnemy) {
+                    this.target = closestEnemy;
+                    let angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+                    this.x += Math.cos(angle) * this.speed;
+                    this.y += Math.sin(angle) * this.speed;
+
+                    if (Math.hypot(this.x - this.target.x, this.y - this.target.y) < game.cellSize) {
+                        if (this.attackCooldown <= 0) {
+                            this.target.health -= 20;
+                            this.attackCooldown = 150;
+                        }
+                        if (this.target.health <= 0) {
+                            game.enemies = game.enemies.filter(e => e !== this.target);
+                            this.target = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Функція малювання сітки
+        function drawGrid() {
+            ctx.strokeStyle = "rgba(255,255,255,0.3)";
+            for (let x = 0; x <= canvas.width; x += game.cellSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += game.cellSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        // Переміщення та будівництво
+        canvas.addEventListener("click", (event) => {
+            if (game.isGameOver) return;
+
+            let rect = canvas.getBoundingClientRect();
+            let mouseX = event.clientX - rect.left;
+            let mouseY = event.clientY - rect.top;
+
+            // Перевірка, чи клікнули на захисника
+            for (let defender of game.defenders) {
+                if (
+                    mouseX >= defender.x &&
+                    mouseX <= defender.x + game.cellSize &&
+                    mouseY >= defender.y &&
+                    mouseY <= defender.y + game.cellSize
+                ) {
+                    // Виділення/зняття виділення
+                    defender.isSelected = !defender.isSelected;
+                    if (defender.isSelected) {
+                        game.selectedDefenders.push(defender);
+                    } else {
+                        game.selectedDefenders = game.selectedDefenders.filter(d => d !== defender);
+                    }
+                    return;
+                }
+            }
+
+            // Переміщення виділених захисників
+            if (game.selectedDefenders.length > 0) {
+                let cellX = Math.floor(mouseX / game.cellSize) * game.cellSize;
+                let cellY = Math.floor(mouseY / game.cellSize) * game.cellSize;
+
+                // Перевірка, чи клітинка вільна
+                let isOccupied = game.buildings.some(b => b.x === cellX && b.y === cellY) ||
+                    game.defenders.some(d => d.x === cellX && d.y === cellY);
+
+                if (!isOccupied) {
+                    game.selectedDefenders.forEach(defender => {
+                        defender.x = cellX;
+                        defender.y = cellY;
+                    });
+                }
+                return;
+            }
+
+            // Перевірка, чи клікнули на вежу
+            for (let building of game.buildings) {
+                if (
+                    building.type === "fireTower" &&
+                    mouseX >= building.x &&
+                    mouseX <= building.x + game.cellSize &&
+                    mouseY >= building.y &&
+                    mouseY <= building.y + game.cellSize
+                ) {
+                    game.selectedBuilding = building;
+                    upgradeMenu.style.display = "block";
+                    return;
+                }
+            }
+
+            let cellX = Math.floor(mouseX / game.cellSize) * game.cellSize;
+            let cellY = Math.floor(mouseY / game.cellSize) * game.cellSize;
+
+            let isOccupied = game.buildings.some(b => b.x === cellX && b.y === cellY);
+            if (!isOccupied) {
+                if (game.selectedBuilding && game.gold >= game.selectedBuilding.cost && game.buildingsUnderConstruction < game.maxBuildingsUnderConstruction) {
+                    let newBuilding = new Building(cellX, cellY, game.selectedBuilding.type);
+                    game.buildings.push(newBuilding);
+                    game.gold -= game.selectedBuilding.cost;
+                    goldDisplay.textContent = game.gold;
+                    game.buildingsUnderConstruction++; // Збільшуємо лічильник будівель, що будуються
+                } else {
+                    alert("Недостатньо ресурсів, не вибрано будівлю або досягнуто ліміт будівництва!");
+                }
+            }
+        });
+
+        // Покращення вежі
+        upgradeButton.addEventListener("click", () => {
+            if (game.gold >= 200 && game.selectedBuilding) {
+                game.selectedBuilding.type = "upgradedFireTower";
+                game.selectedBuilding.emoji = "🌋";
+                game.selectedBuilding.isUnderConstruction = true;
+                game.selectedBuilding.constructionProgress = 0;
+                game.selectedBuilding.constructionTime = 40000;
+                game.gold -= 200;
+                goldDisplay.textContent = game.gold;
+                upgradeMenu.style.display = "none";
+            } else {
+                alert("Недостатньо золота!");
+            }
+        });
+
+        // Закриття міні-меню
+        closeUpgradeMenu.addEventListener("click", () => {
+            upgradeMenu.style.display = "none";
+        });
+
+        // Видалення споруди
+        deleteBuildingButton.addEventListener("click", () => {
+            if (game.selectedBuilding) {
+                game.buildings = game.buildings.filter(b => b !== game.selectedBuilding);
+                game.selectedBuilding = null;
+            }
+        });
+
+        // Спавн ворога
+        function spawnEnemy(type) {
+            let side = Math.floor(Math.random() * 4);
+            let x, y;
+            const margin = 100; // Відступ від краю поля
+
+            switch (side) {
+                case 0: // верх
+                    x = Math.random() * (canvas.width - 2 * margin) + margin;
+                    y = -game.cellSize;
+                    break;
+                case 1: // право
+                    x = canvas.width + game.cellSize;
+                    y = Math.random() * (canvas.height - 2 * margin) + margin;
+                    break;
+                case 2: // низ
+                    x = Math.random() * (canvas.width - 2 * margin) + margin;
+                    y = canvas.height + game.cellSize;
+                    break;
+                case 3: // ліво
+                    x = -game.cellSize;
+                    y = Math.random() * (canvas.height - 2 * margin) + margin;
+                    break;
+            }
+
+            game.enemies.push(new Enemy(x, y, type));
+        }
+
+        // Початок хвилі
+        function startWave() {
+            game.isWaveActive = true;
+            game.timeToNextWave = 120;
+            waveDisplay.textContent = game.wave;
+
+            const baseEnemies = 5 + game.wave; // Більше ворогів з кожним рівнем
+            const waveMultiplier = game.wave * 2;
+            const totalEnemies = baseEnemies + waveMultiplier;
+
+            const spawnInterval = 2000 - (game.wave * 100); // Швидше спавн ворогів з кожним рівнем
+            const minSpawnInterval = 500; // Мінімальний інтервал
+
+            let spawnedEnemies = 0;
+
+            const waveSpawner = setInterval(() => {
+                if (spawnedEnemies >= totalEnemies) {
+                    clearInterval(waveSpawner);
+                    return;
+                }
+
+                // Випадково обираємо тип ворога
+                const enemyTypes = ["zombie", "demon", "skeleton"];
+                const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+                spawnEnemy(enemyType);
+                spawnedEnemies++;
+            }, Math.max(minSpawnInterval, spawnInterval));
+
+            // У функції startWave(), в блоку setTimeout де обробляється завершення хвилі
+            setTimeout(() => {
+                game.isWaveActive = false;
+                game.wave++;
+                game.gold += 1000;
+                goldDisplay.textContent = game.gold;
+
+                // Перевірка, чи потрібно відкрити нову вежу
+                if (game.wave === game.nextTowerUnlockWave) {
+                    const newTower = getNextTower();
+                    if (newTower) {
+                        game.unlockedTowers.push(newTower);
+                        game.nextTowerUnlockWave += game.towerUnlockInterval;
+                        alert(`Нова вежа "${newTower}" відкрита!`);
+                        updateBuildButtonsVisibility(); // Оновлюємо кнопки
+                    }
+                }
+
+                // Пауза між хвилями
+                setTimeout(() => {
+                    startWave();
+                }, 120000);
+            }, totalEnemies * Math.max(minSpawnInterval, spawnInterval) + 5000);
+        }
+
+        // Отримання наступної вежі для відкриття
+        function getNextTower() {
+            const towers = ["fireTower", "iceTower", "magicTower", "sniperTower"];
+            for (let tower of towers) {
+                if (!game.unlockedTowers.includes(tower)) {
+                    return tower;
+                }
+            }
+            return null; // Якщо всі вежі вже відкриті
+        }
+
+        // Шахта: генерація золота
+        function startMineProduction() {
+            game.mineInterval = setInterval(() => {
+                if (game.isGameOver) return;
+
+                game.buildings.forEach(building => {
+                    if (building.type === "mine" && !building.isUnderConstruction) {
+                        game.gold += 1; // Генерація золота (1 в секунду)
+                        goldDisplay.textContent = game.gold;
+                    }
+                });
+            }, 1000); // Генерація кожну секунду
+        }
+
+        // Скидання гри
+        function resetGame() {
+            game.buildings = [];
+            game.enemies = [];
+            game.defenders = [];
+            game.gold = 500;
+            game.townHall = new Building(canvas.width / 2 - game.cellSize, canvas.height / 2 - game.cellSize, "townHall");
+            game.townHall.isUnderConstruction = false;
+            game.isGameOver = false;
+            game.wave = 1;
+            game.isWaveActive = false;
+            retryButton.style.display = "none";
+            goldDisplay.textContent = game.gold;
+            townHallHealthDisplay.textContent = game.townHall.health;
+            waveDisplay.textContent = game.wave;
+            game.buildingsUnderConstruction = 0;
+            game.maxBuildingsUnderConstruction = 2;
+            game.unlockedTowers = ["wall", "archerTower", "mine"];
+            game.nextTowerUnlockWave = 2;
+
+            updateBuildButtonsVisibility(); // Оновлюємо кнопки при скиданні гри
+
+            if (game.mineInterval) clearInterval(game.mineInterval);
+            startMineProduction();
+
+            setTimeout(() => {
+                startWave();
+            }, 35000);
+        }
+
+        // При завантаженні сторінки
+        window.addEventListener('load', function () {
+            updateBuildButtonsVisibility();
+        });
+        // Основний цикл гри
+        function gameLoop() {
+            if (game.isGameOver) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+
+            if (game.townHall) {
+                game.townHall.draw();
+                townHallHealthDisplay.textContent = game.townHall.health;
+            }
+
+            game.buildings.forEach(building => {
+                building.draw();
+                building.update();
+            });
+
+            game.enemies.forEach(enemy => {
+                enemy.draw();
+                enemy.update();
+            });
+
+            game.defenders.forEach(defender => {
+                defender.draw();
+                defender.update();
+            });
+
+            game.enemies = game.enemies.filter(enemy => enemy.health > 0);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Початкова ініціалізація
+        startButton.addEventListener("click", () => {
+            startMenu.style.display = "none"; // Приховуємо стартове меню
+            canvas.style.display = "block"; // Показуємо canvas
+            document.querySelector(".info").style.display = "block"; // Показуємо інформацію
+            document.querySelector(".build-panel").style.display = "flex"; // Показуємо панель будівництва
+            resetGame();
+            gameLoop();
+        });
+        function updateBuildButtonsVisibility() {
+            // Оновлюємо видимість кнопок відповідно до розблокованих веж
+            buildFireTowerButton.style.display = game.unlockedTowers.includes("fireTower") ? "block" : "none";
+            buildIceTowerButton.style.display = game.unlockedTowers.includes("iceTower") ? "block" : "none";
+            buildMagicTowerButton.style.display = game.unlockedTowers.includes("magicTower") ? "block" : "none";
+            buildSniperTowerButton.style.display = game.unlockedTowers.includes("sniperTower") ? "block" : "none";
+        }
+
+        exitButton.addEventListener("click", () => {
+            window.close(); // Закриваємо вікно (працює не у всіх браузерах)
+        });
+
+        // Обробники кнопок будівництва
+        buildWallButton.addEventListener("click", () => {
+            game.selectedBuilding = { type: "wall", cost: 20 };
+        });
+
+        buildFireTowerButton.addEventListener("click", () => {
+            if (game.unlockedTowers.includes("fireTower")) {
+                game.selectedBuilding = { type: "fireTower", cost: 300 };
+            } else {
+                alert("Ця вежа ще не відкрита!");
+            }
+        });
+
+        buildIceTowerButton.addEventListener("click", () => {
+            if (game.unlockedTowers.includes("iceTower")) {
+                game.selectedBuilding = { type: "iceTower", cost: 350 };
+            } else {
+                alert("Ця вежа ще не відкрита!");
+            }
+        });
+
+        buildMagicTowerButton.addEventListener("click", () => {
+            if (game.unlockedTowers.includes("magicTower")) {
+                game.selectedBuilding = { type: "magicTower", cost: 400 };
+            } else {
+                alert("Ця вежа ще не відкрита!");
+            }
+        });
+
+        buildSniperTowerButton.addEventListener("click", () => {
+            if (game.unlockedTowers.includes("sniperTower")) {
+                game.selectedBuilding = { type: "sniperTower", cost: 450 };
+            } else {
+                alert("Ця вежа ще не відкрита!");
+            }
+        });
+
+        buildArcherTowerButton.addEventListener("click", () => {
+            game.selectedBuilding = { type: "archerTower", cost: 100 };
+        });
+
+        buildMineButton.addEventListener("click", () => {
+            game.selectedBuilding = { type: "mine", cost: 100 };
+        });
+
+        buildWorkerButton.addEventListener("click", () => {
+            if (game.gold >= 5000) {
+                game.selectedBuilding = { type: "worker", cost: 5000 };
+            } else {
+                alert("Недостатньо золота!");
+            }
+        });
+    </script>
+</body>
+
+</html>
